@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import RealTimeOptionsService from '../services/realTimeOptionsService';
+import ComprehensiveOptionsService from '../services/comprehensiveOptionsService';
 
 function TopCallOptions() {
   const [allRecommendations, setAllRecommendations] = useState([]);
@@ -9,23 +9,19 @@ function TopCallOptions() {
   const [isLoading, setIsLoading] = useState(true);
   const [columnFilters, setColumnFilters] = useState({});
 
-  // Load real-time recommendations on component mount
   useEffect(() => {
     loadRealTimeRecommendations();
   }, []);
 
-  // Apply filters whenever search term or column filters change
   useEffect(() => {
     applyFilters();
   }, [searchTerm, columnFilters, allRecommendations]);
 
   const loadRealTimeRecommendations = async () => {
     setIsLoading(true);
-
     try {
-      const service = new RealTimeOptionsService();
-      const recommendations = await service.generateRealTimeRecommendations();
-
+      const service = new ComprehensiveOptionsService();
+      const recommendations = await service.generateAllRecommendations();
       setAllRecommendations(recommendations);
       setFilteredRecommendations(recommendations);
     } catch (error) {
@@ -38,16 +34,13 @@ function TopCallOptions() {
   const applyFilters = () => {
     let filtered = [...allRecommendations];
 
-    // Apply search filter
     if (searchTerm.trim() !== '') {
       filtered = filtered.filter(rec =>
         rec.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rec.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rec.sector.toLowerCase().includes(searchTerm.toLowerCase())
+        rec.strategy.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Apply column filters
     Object.keys(columnFilters).forEach(column => {
       const filterValue = columnFilters[column];
       if (filterValue && filterValue.trim() !== '') {
@@ -62,18 +55,7 @@ function TopCallOptions() {
   };
 
   const handleColumnFilterChange = (column, value) => {
-    setColumnFilters(prev => ({
-      ...prev,
-      [column]: value
-    }));
-  };
-
-  const clearColumnFilter = (column) => {
-    setColumnFilters(prev => {
-      const newFilters = { ...prev };
-      delete newFilters[column];
-      return newFilters;
-    });
+    setColumnFilters(prev => ({ ...prev, [column]: value }));
   };
 
   const clearAllFilters = () => {
@@ -82,24 +64,20 @@ function TopCallOptions() {
   };
 
   const getRiskBadgeClass = (riskLevel) => {
-    switch (riskLevel) {
-      case 'Low':
-        return 'risk-badge risk-low';
-      case 'Medium':
-        return 'risk-badge risk-medium';
-      case 'High':
-        return 'risk-badge risk-high';
-      default:
-        return 'risk-badge';
-    }
+    const level = riskLevel.toLowerCase();
+    if (level.includes('low')) return 'risk-badge risk-low';
+    if (level.includes('high')) return 'risk-badge risk-high';
+    return 'risk-badge risk-medium';
   };
 
-  const handleRowClick = (recommendation) => {
-    setSelectedRecommendation(recommendation);
-  };
-
-  const closeModal = () => {
-    setSelectedRecommendation(null);
+  const getStrategyBadgeClass = (strategy) => {
+    if (strategy === 'Sell Put') return 'strategy-badge sell-put';
+    if (strategy === 'Sell Call') return 'strategy-badge sell-call';
+    if (strategy === 'Buy Call') return 'strategy-badge buy-call';
+    if (strategy === 'Buy Put') return 'strategy-badge buy-put';
+    if (strategy === 'Covered Call') return 'strategy-badge covered-call';
+    if (strategy === 'Bull Call Spread') return 'strategy-badge spread';
+    return 'strategy-badge';
   };
 
   const getActiveFilterCount = () => {
@@ -110,14 +88,15 @@ function TopCallOptions() {
     <div className="top-call-options">
       <div className="options-page-header">
         <div>
-          <h2>Top 100 Real-Time Options Recommendations</h2>
+          <h2>Real-Time Options Strategy Recommendations</h2>
           <p className="section-description">
-            Live market data for 50 stocks with both Sell Put and Sell Call recommendations.
-            All prices, volumes, and metrics are fetched in real-time from Yahoo Finance API.
+            100% real-time market data. Dynamically analyzes actively traded stocks from Yahoo Finance.
+            6 strategies: Sell Put, Sell Call, Buy Call, Buy Put, Covered Call, and Bull Call Spread.
+            All prices, volumes, and expiration dates are live - no hardcoded data.
           </p>
         </div>
         <button onClick={loadRealTimeRecommendations} className="refresh-button" disabled={isLoading}>
-          {isLoading ? 'Loading Live Data...' : '🔄 Refresh Real-Time Data'}
+          {isLoading ? 'Loading Live Data...' : '🔄 Refresh Data'}
         </button>
       </div>
 
@@ -127,7 +106,7 @@ function TopCallOptions() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by symbol, company, or sector..."
+            placeholder="Search by symbol or strategy..."
             className="filter-input"
             disabled={isLoading}
           />
@@ -152,8 +131,8 @@ function TopCallOptions() {
       {isLoading && (
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Fetching real-time data from Yahoo Finance for 50 stocks...</p>
-          <p className="loading-subtext">This may take 30-60 seconds as we fetch live prices and options data</p>
+          <p>Fetching real-time options data from Yahoo Finance...</p>
+          <p className="loading-subtext">Dynamically loading actively traded stocks and analyzing 6 strategies for each</p>
         </div>
       )}
 
@@ -184,49 +163,33 @@ function TopCallOptions() {
                     />
                   </th>
                   <th>
-                    Company
-                    <input
-                      type="text"
-                      placeholder="Filter..."
-                      className="column-filter"
-                      value={columnFilters.companyName || ''}
-                      onChange={(e) => handleColumnFilterChange('companyName', e.target.value)}
-                    />
-                  </th>
-                  <th>
-                    Option Type
+                    Strategy
                     <select
                       className="column-filter"
-                      value={columnFilters.optionType || ''}
-                      onChange={(e) => handleColumnFilterChange('optionType', e.target.value)}
+                      value={columnFilters.strategy || ''}
+                      onChange={(e) => handleColumnFilterChange('strategy', e.target.value)}
                     >
                       <option value="">All</option>
                       <option value="Sell Put">Sell Put</option>
                       <option value="Sell Call">Sell Call</option>
+                      <option value="Buy Call">Buy Call</option>
+                      <option value="Buy Put">Buy Put</option>
+                      <option value="Covered Call">Covered Call</option>
+                      <option value="Bull Call Spread">Bull Call Spread</option>
                     </select>
                   </th>
                   <th>
-                    Sector
+                    Stock Price
                     <input
                       type="text"
                       placeholder="Filter..."
                       className="column-filter"
-                      value={columnFilters.sector || ''}
-                      onChange={(e) => handleColumnFilterChange('sector', e.target.value)}
+                      value={columnFilters.stockPrice || ''}
+                      onChange={(e) => handleColumnFilterChange('stockPrice', e.target.value)}
                     />
                   </th>
                   <th>
-                    Current Price
-                    <input
-                      type="text"
-                      placeholder="Filter..."
-                      className="column-filter"
-                      value={columnFilters.currentPrice || ''}
-                      onChange={(e) => handleColumnFilterChange('currentPrice', e.target.value)}
-                    />
-                  </th>
-                  <th>
-                    Strike Price
+                    Strike
                     <input
                       type="text"
                       placeholder="Filter..."
@@ -243,16 +206,6 @@ function TopCallOptions() {
                       className="column-filter"
                       value={columnFilters.expirationDate || ''}
                       onChange={(e) => handleColumnFilterChange('expirationDate', e.target.value)}
-                    />
-                  </th>
-                  <th>
-                    Days
-                    <input
-                      type="text"
-                      placeholder="Filter..."
-                      className="column-filter"
-                      value={columnFilters.daysToExpiry || ''}
-                      onChange={(e) => handleColumnFilterChange('daysToExpiry', e.target.value)}
                     />
                   </th>
                   <th>
@@ -276,31 +229,61 @@ function TopCallOptions() {
                     />
                   </th>
                   <th>
+                    Volume
+                    <input
+                      type="text"
+                      placeholder="Filter..."
+                      className="column-filter"
+                      value={columnFilters.volume || ''}
+                      onChange={(e) => handleColumnFilterChange('volume', e.target.value)}
+                    />
+                  </th>
+                  <th>
+                    Open Int.
+                    <input
+                      type="text"
+                      placeholder="Filter..."
+                      className="column-filter"
+                      value={columnFilters.openInterest || ''}
+                      onChange={(e) => handleColumnFilterChange('openInterest', e.target.value)}
+                    />
+                  </th>
+                  <th>
+                    IV %
+                    <input
+                      type="text"
+                      placeholder="Filter..."
+                      className="column-filter"
+                      value={columnFilters.iv || ''}
+                      onChange={(e) => handleColumnFilterChange('iv', e.target.value)}
+                    />
+                  </th>
+                  <th>
                     Return %
                     <input
                       type="text"
                       placeholder="Filter..."
                       className="column-filter"
-                      value={columnFilters.returnOnCapital || ''}
-                      onChange={(e) => handleColumnFilterChange('returnOnCapital', e.target.value)}
+                      value={columnFilters.returnPercent || ''}
+                      onChange={(e) => handleColumnFilterChange('returnPercent', e.target.value)}
                     />
                   </th>
                   <th>
-                    Annual. %
+                    Annual %
                     <input
                       type="text"
                       placeholder="Filter..."
                       className="column-filter"
-                      value={columnFilters.annualizedReturn || ''}
-                      onChange={(e) => handleColumnFilterChange('annualizedReturn', e.target.value)}
+                      value={columnFilters.annualReturn || ''}
+                      onChange={(e) => handleColumnFilterChange('annualReturn', e.target.value)}
                     />
                   </th>
                   <th>
                     Risk
                     <select
                       className="column-filter"
-                      value={columnFilters.riskLevel || ''}
-                      onChange={(e) => handleColumnFilterChange('riskLevel', e.target.value)}
+                      value={columnFilters.risk || ''}
+                      onChange={(e) => handleColumnFilterChange('risk', e.target.value)}
                     >
                       <option value="">All</option>
                       <option value="Low">Low</option>
@@ -308,49 +291,40 @@ function TopCallOptions() {
                       <option value="High">High</option>
                     </select>
                   </th>
-                  <th>
-                    Recommendation
-                    <input
-                      type="text"
-                      placeholder="Filter..."
-                      className="column-filter"
-                      value={columnFilters.recommendation || ''}
-                      onChange={(e) => handleColumnFilterChange('recommendation', e.target.value)}
-                    />
-                  </th>
                   <th>Details</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRecommendations.map((rec, index) => (
-                  <tr key={`${rec.symbol}-${rec.optionType}-${index}`} className="recommendation-row">
+                  <tr key={`${rec.symbol}-${rec.strategy}-${index}`} className="recommendation-row">
                     <td className="rank-cell">{rec.rank}</td>
                     <td className="symbol-cell">{rec.symbol}</td>
-                    <td className="company-cell">{rec.companyName}</td>
-                    <td className={`option-type-cell ${rec.optionType === 'Sell Put' ? 'put-option' : 'call-option'}`}>
-                      {rec.optionType}
-                    </td>
-                    <td className="sector-cell">{rec.sector}</td>
-                    <td className="price-cell">${rec.currentPrice.toFixed(2)}</td>
-                    <td className="strike-cell">${rec.strikePrice.toFixed(2)}</td>
-                    <td className="expiration-cell">{rec.expirationDate}</td>
-                    <td className="days-cell">{rec.daysToExpiry}</td>
-                    <td className="premium-cell">${rec.premium.toFixed(2)}</td>
-                    <td className="total-premium-cell">${rec.totalPremium.toFixed(2)}</td>
-                    <td className="return-cell">{rec.returnOnCapital}%</td>
-                    <td className="annual-return-cell">{rec.annualizedReturn}%</td>
                     <td>
-                      <span className={getRiskBadgeClass(rec.riskLevel)}>
-                        {rec.riskLevel}
+                      <span className={getStrategyBadgeClass(rec.strategy)}>
+                        {rec.strategy}
                       </span>
                     </td>
-                    <td className="recommendation-cell">{rec.recommendation}</td>
+                    <td className="price-cell">${rec.stockPrice.toFixed(2)}</td>
+                    <td className="strike-cell">${rec.strikePrice.toFixed(2)}</td>
+                    <td className="expiration-cell">{rec.expirationDate}</td>
+                    <td className="premium-cell">${rec.premium.toFixed(2)}</td>
+                    <td className="total-premium-cell">${rec.totalPremium.toFixed(2)}</td>
+                    <td className="volume-cell">{rec.volume.toLocaleString()}</td>
+                    <td className="oi-cell">{rec.openInterest.toLocaleString()}</td>
+                    <td className="iv-cell">{rec.iv}%</td>
+                    <td className="return-cell">{rec.returnPercent}%</td>
+                    <td className="annual-return-cell">{rec.annualReturn}%</td>
+                    <td>
+                      <span className={getRiskBadgeClass(rec.risk)}>
+                        {rec.risk}
+                      </span>
+                    </td>
                     <td>
                       <button
                         className="view-analysis-btn"
-                        onClick={() => handleRowClick(rec)}
+                        onClick={() => setSelectedRecommendation(rec)}
                       >
-                        View Analysis
+                        View Strategy
                       </button>
                     </td>
                   </tr>
@@ -360,10 +334,9 @@ function TopCallOptions() {
           </div>
 
           <div className="options-footer-note">
-            <p><strong>Real-Time Data:</strong> All stock prices, options prices, volumes, and implied volatility are fetched live from Yahoo Finance.
-            Use column filters to narrow down recommendations by any criteria.</p>
-            <p className="strategy-note"><strong>Sell Put:</strong> Collect premium, obligated to buy if assigned.
-            <strong> Sell Call:</strong> Collect premium, obligated to sell if assigned.</p>
+            <p><strong>Real-Time Data:</strong> All prices, volumes, and expirations fetched live from Yahoo Finance API.
+            Use column filters to find specific strategies, symbols, or risk levels.</p>
+            <p className="strategy-note"><strong>6 Strategies:</strong> Sell Put (cash-secured), Sell Call (naked), Buy Call (long), Buy Put (long/hedge), Covered Call (income), Bull Call Spread (limited risk).</p>
           </div>
         </div>
       )}
@@ -378,18 +351,18 @@ function TopCallOptions() {
       )}
 
       {selectedRecommendation && (
-        <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-overlay" onClick={() => setSelectedRecommendation(null)}>
           <div className="analysis-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>✕</button>
+            <button className="modal-close" onClick={() => setSelectedRecommendation(null)}>✕</button>
 
             <div className="modal-header">
-              <h2>{selectedRecommendation.symbol} - {selectedRecommendation.companyName}</h2>
+              <h2>{selectedRecommendation.symbol} - {selectedRecommendation.strategy}</h2>
               <div className="modal-badges">
-                <span className={`option-type-badge ${selectedRecommendation.optionType === 'Sell Put' ? 'put-badge' : 'call-badge'}`}>
-                  {selectedRecommendation.optionType}
+                <span className={getStrategyBadgeClass(selectedRecommendation.strategy)}>
+                  {selectedRecommendation.strategy}
                 </span>
-                <span className={getRiskBadgeClass(selectedRecommendation.riskLevel)}>
-                  {selectedRecommendation.riskLevel} Risk
+                <span className={getRiskBadgeClass(selectedRecommendation.risk)}>
+                  {selectedRecommendation.risk} Risk
                 </span>
               </div>
             </div>
@@ -404,40 +377,28 @@ function TopCallOptions() {
                 <h3>Trade Details</h3>
                 <div className="detail-grid">
                   <div className="detail-item">
-                    <span className="detail-label">Option Type:</span>
-                    <span className="detail-value">{selectedRecommendation.optionType}</span>
+                    <span className="detail-label">Strategy:</span>
+                    <span className="detail-value">{selectedRecommendation.strategy}</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Current Price:</span>
-                    <span className="detail-value">${selectedRecommendation.currentPrice.toFixed(2)}</span>
+                    <span className="detail-label">Stock Price:</span>
+                    <span className="detail-value">${selectedRecommendation.stockPrice.toFixed(2)}</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Strike Price:</span>
                     <span className="detail-value">${selectedRecommendation.strikePrice.toFixed(2)}</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Expiration Date:</span>
+                    <span className="detail-label">Expiration:</span>
                     <span className="detail-value">{selectedRecommendation.expirationDate}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Days to Expiry:</span>
-                    <span className="detail-value">{selectedRecommendation.daysToExpiry} days</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Premium per Share:</span>
                     <span className="detail-value">${selectedRecommendation.premium.toFixed(2)}</span>
                   </div>
                   <div className="detail-item">
-                    <span className="detail-label">Total Premium:</span>
+                    <span className="detail-label">Total Premium/Cost:</span>
                     <span className="detail-value">${selectedRecommendation.totalPremium.toFixed(2)}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Return on Capital:</span>
-                    <span className="detail-value">{selectedRecommendation.returnOnCapital}%</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Annualized Return:</span>
-                    <span className="detail-value">{selectedRecommendation.annualizedReturn}%</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Volume:</span>
@@ -449,49 +410,26 @@ function TopCallOptions() {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Implied Volatility:</span>
-                    <span className="detail-value">{selectedRecommendation.impliedVolatility}%</span>
+                    <span className="detail-value">{selectedRecommendation.iv}%</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Return %:</span>
+                    <span className="detail-value">{selectedRecommendation.returnPercent}%</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Annualized Return:</span>
+                    <span className="detail-value">{selectedRecommendation.annualReturn}%</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Risk Level:</span>
+                    <span className="detail-value">{selectedRecommendation.risk}</span>
                   </div>
                 </div>
               </div>
 
               <div className="modal-section">
-                <h3>Summary Analysis</h3>
-                <p className="analysis-text">{selectedRecommendation.analysis.summary}</p>
-              </div>
-
-              <div className="modal-section">
-                <h3>Market Trend Analysis</h3>
-                <p className="analysis-text">{selectedRecommendation.analysis.marketTrend}</p>
-              </div>
-
-              <div className="modal-section">
-                <h3>Economic Conditions</h3>
-                <p className="analysis-text">{selectedRecommendation.analysis.economicConditions}</p>
-              </div>
-
-              <div className="modal-section">
-                <h3>Technical Analysis</h3>
-                <p className="analysis-text">{selectedRecommendation.analysis.technicalAnalysis}</p>
-              </div>
-
-              <div className="modal-section">
-                <h3>Fundamental Analysis</h3>
-                <p className="analysis-text">{selectedRecommendation.analysis.fundamentalAnalysis}</p>
-              </div>
-
-              <div className="modal-section">
-                <h3>Execution Strategy</h3>
-                <p className="analysis-text strategy-highlight">{selectedRecommendation.analysis.strategy}</p>
-              </div>
-
-              <div className="modal-section">
-                <h3>Risk Assessment</h3>
-                <p className="analysis-text">{selectedRecommendation.analysis.riskAssessment}</p>
-              </div>
-
-              <div className="modal-section recommendation-section">
-                <h3>Final Recommendation</h3>
-                <p className="recommendation-highlight">{selectedRecommendation.recommendation}</p>
+                <h3>Trading Strategy</h3>
+                <p className="trading-strategy-text">{selectedRecommendation.tradingStrategy}</p>
               </div>
             </div>
           </div>

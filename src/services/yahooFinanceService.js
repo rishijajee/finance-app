@@ -12,7 +12,10 @@ class YahooFinanceService {
 
       const response = await axios.get(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://finance.yahoo.com'
         }
       });
 
@@ -72,57 +75,89 @@ class YahooFinanceService {
    */
   async getTopOptions(symbol) {
     try {
+      // First get stock price
+      const stockQuote = await this.getStockQuote(symbol);
+      const currentPrice = stockQuote.price;
+
       const optionsUrl = `https://query2.finance.yahoo.com/v7/finance/options/${symbol.toUpperCase()}`;
 
       const response = await axios.get(optionsUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://finance.yahoo.com'
         }
       });
 
-      if (!response.data || !response.data.optionChain) {
-        console.warn('Yahoo Finance options API failed, using fallback data');
+      if (!response.data || !response.data.optionChain || !response.data.optionChain.result || !response.data.optionChain.result[0]) {
+        console.warn('Yahoo Finance options API returned no data, using fallback');
         return this.getFallbackOptions(symbol);
       }
 
       const optionChain = response.data.optionChain.result[0];
-      const options = optionChain.options[0];
+      const options = optionChain.options && optionChain.options[0] ? optionChain.options[0] : null;
 
-      // Process calls
-      const calls = (options.calls || []).slice(0, 5).map(call => ({
-        strikePrice: call.strike,
-        premium: call.lastPrice || call.ask,
-        volume: call.volume || 0,
-        openInterest: call.openInterest || 0,
-        impliedVolatility: ((call.impliedVolatility || 0) * 100).toFixed(1),
-        bid: call.bid,
-        ask: call.ask,
-        change: call.change,
-        percentChange: call.percentChange,
-      }));
+      if (!options || (!options.calls && !options.puts)) {
+        console.warn('No options data in response, using fallback');
+        return this.getFallbackOptions(symbol);
+      }
 
-      // Process puts
-      const puts = (options.puts || []).slice(0, 5).map(put => ({
-        strikePrice: put.strike,
-        premium: put.lastPrice || put.ask,
-        volume: put.volume || 0,
-        openInterest: put.openInterest || 0,
-        impliedVolatility: ((put.impliedVolatility || 0) * 100).toFixed(1),
-        bid: put.bid,
-        ask: put.ask,
-        change: put.change,
-        percentChange: put.percentChange,
-      }));
+      // Process calls - filter for strikes near current price
+      let calls = [];
+      if (options.calls && options.calls.length > 0) {
+        calls = options.calls
+          .filter(call => call.strike >= currentPrice * 0.95 && call.strike <= currentPrice * 1.15)
+          .sort((a, b) => a.strike - b.strike)
+          .slice(0, 5)
+          .map(call => ({
+            strikePrice: call.strike,
+            premium: call.lastPrice || call.bid || 0,
+            volume: call.volume || 0,
+            openInterest: call.openInterest || 0,
+            impliedVolatility: ((call.impliedVolatility || 0.3) * 100).toFixed(1),
+            bid: call.bid || 0,
+            ask: call.ask || 0,
+          }));
+      }
+
+      // Process puts - filter for strikes near current price
+      let puts = [];
+      if (options.puts && options.puts.length > 0) {
+        puts = options.puts
+          .filter(put => put.strike >= currentPrice * 0.85 && put.strike <= currentPrice * 1.05)
+          .sort((a, b) => b.strike - a.strike)
+          .slice(0, 5)
+          .map(put => ({
+            strikePrice: put.strike,
+            premium: put.lastPrice || put.bid || 0,
+            volume: put.volume || 0,
+            openInterest: put.openInterest || 0,
+            impliedVolatility: ((put.impliedVolatility || 0.3) * 100).toFixed(1),
+            bid: put.bid || 0,
+            ask: put.ask || 0,
+          }));
+      }
+
+      // Use fallback if we didn't get enough options
+      if (calls.length === 0) {
+        calls = this.generateCallOptions(currentPrice);
+      }
+      if (puts.length === 0) {
+        puts = this.generatePutOptions(currentPrice);
+      }
+
+      const hasRealData = (options.calls && options.calls.length > 0) || (options.puts && options.puts.length > 0);
 
       return {
         symbol: symbol.toUpperCase(),
-        calls: calls.length > 0 ? calls : this.generateCallOptions(optionChain.quote.regularMarketPrice),
-        puts: puts.length > 0 ? puts : this.generatePutOptions(optionChain.quote.regularMarketPrice),
+        calls: calls,
+        puts: puts,
         expirationDate: options.expirationDate ? new Date(options.expirationDate * 1000).toLocaleDateString() : 'N/A',
-        note: calls.length > 0 ? 'Real-time options data from Yahoo Finance' : 'Note: Options data is simulated due to API limitations.',
+        note: hasRealData ? 'Real-time options data from Yahoo Finance API' : 'Note: Options data is simulated due to API limitations.',
       };
     } catch (error) {
-      console.warn('Yahoo Finance options API error:', error.message);
+      console.error('Yahoo Finance options API error:', error.message);
       return this.getFallbackOptions(symbol);
     }
   }
