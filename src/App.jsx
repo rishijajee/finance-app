@@ -2,6 +2,8 @@ import { useState } from 'react';
 import StockLookup from './components/StockLookup';
 import StockPrice from './components/StockPrice';
 import OptionsTable from './components/OptionsTable';
+import NavigationMenu from './components/NavigationMenu';
+import TopCallOptions from './components/TopCallOptions';
 import AlphaVantageService from './services/alphaVantageService';
 import './App.css';
 
@@ -12,6 +14,7 @@ function App() {
   const [error, setError] = useState(null);
   const [apiKey, setApiKey] = useState('');
   const [showApiInput, setShowApiInput] = useState(true);
+  const [currentView, setCurrentView] = useState('home');
 
   const handleApiKeySubmit = (e) => {
     e.preventDefault();
@@ -50,6 +53,14 @@ function App() {
     }
   };
 
+  const handleNavigate = (view) => {
+    setCurrentView(view);
+    // Reset data when navigating
+    setStockData(null);
+    setOptionsData(null);
+    setError(null);
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -85,32 +96,44 @@ function App() {
           </div>
         ) : (
           <>
-            <div className="search-section">
-              <StockLookup onSearch={handleSearch} isLoading={isLoading} />
-              <button onClick={() => setShowApiInput(true)} className="change-api-key">
-                Change API Key
-              </button>
+            <NavigationMenu onNavigate={handleNavigate} currentView={currentView} />
+
+            <div className="content-section">
+              {currentView === 'home' && (
+                <>
+                  <div className="search-section">
+                    <StockLookup onSearch={handleSearch} isLoading={isLoading} />
+                    <button onClick={() => setShowApiInput(true)} className="change-api-key">
+                      Change API Key
+                    </button>
+                  </div>
+
+                  {error && (
+                    <div className="error-message">
+                      <strong>Error:</strong> {error}
+                    </div>
+                  )}
+
+                  {stockData && (
+                    <div className="results-section">
+                      <StockPrice stockData={stockData} />
+                      <OptionsTable optionsData={optionsData} />
+                    </div>
+                  )}
+
+                  {!stockData && !error && !isLoading && (
+                    <div className="empty-state">
+                      <p>Enter a stock symbol above to get started</p>
+                      <p className="empty-state-examples">Try: AAPL, GOOGL, MSFT, TSLA, AMZN</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {currentView === 'topCallOptions' && (
+                <TopCallOptions apiKey={apiKey} />
+              )}
             </div>
-
-            {error && (
-              <div className="error-message">
-                <strong>Error:</strong> {error}
-              </div>
-            )}
-
-            {stockData && (
-              <div className="results-section">
-                <StockPrice stockData={stockData} />
-                <OptionsTable optionsData={optionsData} />
-              </div>
-            )}
-
-            {!stockData && !error && !isLoading && (
-              <div className="empty-state">
-                <p>Enter a stock symbol above to get started</p>
-                <p className="empty-state-examples">Try: AAPL, GOOGL, MSFT, TSLA, AMZN</p>
-              </div>
-            )}
           </>
         )}
       </main>
