@@ -690,6 +690,54 @@
   color: #991b1b;
 }
 
+/* Stock Selector */
+.stock-selector {
+  margin-bottom: 2rem;
+}
+
+.popular-stocks {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.popular-label {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.stock-chip {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #667eea;
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stock-chip:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.stock-chip.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #764ba2;
+}
+
+.stock-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Options Footer Note */
 .options-footer-note {
   margin-top: 1.5rem;
@@ -700,10 +748,20 @@
 }
 
 .options-footer-note p {
-  margin: 0;
+  margin: 0 0 0.5rem 0;
   color: #4a5568;
   font-size: 0.9rem;
   line-height: 1.6;
+}
+
+.options-footer-note p:last-child {
+  margin-bottom: 0;
+}
+
+.strategy-note {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 /* Footer */

@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import OptionsService from '../services/optionsService';
 
 function TopCallOptions() {
-  const [symbol, setSymbol] = useState('');
+  const [symbol, setSymbol] = useState('AAPL');
   const [putOptions, setPutOptions] = useState(null);
   const [stockPrice, setStockPrice] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!symbol.trim()) return;
+  // Load options data on component mount
+  useEffect(() => {
+    loadOptions('AAPL');
+  }, []);
 
+  const loadOptions = async (ticker) => {
     setIsLoading(true);
     setError(null);
     setPutOptions(null);
@@ -19,11 +21,12 @@ function TopCallOptions() {
 
     try {
       const service = new OptionsService();
-      const data = await service.getTopSellPutOptions(symbol.toUpperCase());
+      const data = await service.getTopSellPutOptions(ticker);
 
       if (data && data.options && data.options.length > 0) {
         setPutOptions(data.options);
         setStockPrice(data.stockPrice);
+        setSymbol(ticker);
       } else {
         setError('No put options data available for this symbol');
       }
@@ -33,6 +36,12 @@ function TopCallOptions() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!symbol.trim()) return;
+    await loadOptions(symbol.toUpperCase());
   };
 
   const getRiskBadgeClass = (riskLevel) => {
@@ -48,6 +57,8 @@ function TopCallOptions() {
     }
   };
 
+  const popularStocks = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA', 'META'];
+
   return (
     <div className="top-call-options">
       <h2>Top Sell Put Options</h2>
@@ -56,23 +67,39 @@ function TopCallOptions() {
         Sell put strategy profits when stock stays above strike price.
       </p>
 
-      <form onSubmit={handleSubmit} className="options-search-form">
-        <input
-          type="text"
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-          placeholder="Enter stock symbol (e.g., AAPL)"
-          className="options-search-input"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          className="options-search-button"
-          disabled={isLoading || !symbol.trim()}
-        >
-          {isLoading ? 'Loading...' : 'Get Top Sell Puts'}
-        </button>
-      </form>
+      <div className="stock-selector">
+        <div className="popular-stocks">
+          <span className="popular-label">Popular:</span>
+          {popularStocks.map((stock) => (
+            <button
+              key={stock}
+              onClick={() => loadOptions(stock)}
+              className={`stock-chip ${symbol === stock ? 'active' : ''}`}
+              disabled={isLoading}
+            >
+              {stock}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="options-search-form">
+          <input
+            type="text"
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+            placeholder="Or enter custom symbol"
+            className="options-search-input"
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            className="options-search-button"
+            disabled={isLoading || !symbol.trim()}
+          >
+            {isLoading ? 'Loading...' : 'Search'}
+          </button>
+        </form>
+      </div>
 
       {error && (
         <div className="error-message">
@@ -135,8 +162,12 @@ function TopCallOptions() {
           </div>
 
           <div className="options-footer-note">
-            <p><strong>Note:</strong> Data is real-time from Yahoo Finance. Premium = Option Price × 100 shares.
+            <p><strong>Note:</strong> Attempting to fetch real-time data from Yahoo Finance API. Due to CORS restrictions in browsers,
+            the app may fall back to realistic mock data for demonstration. Premium = Option Price × 100 shares.
             Return % = (Premium / Capital Required) × 100. Higher return and volume indicate better opportunities.</p>
+            <p className="strategy-note"><strong>Sell Put Strategy:</strong> You collect the premium upfront. If the stock stays
+            above the strike price at expiration, you keep the full premium as profit. If it falls below, you may be assigned
+            the stock at the strike price.</p>
           </div>
         </div>
       )}
