@@ -101,7 +101,141 @@ class OptionsService {
   }
 
   /**
-   * Get top sell put options for the week
+   * Get recommended top sell put options across multiple stocks
+   * Based on market analysis criteria: high volume, good premiums, reasonable risk
+   * @returns {Promise} List of recommended sell put options
+   */
+  async getRecommendedSellPutOptions() {
+    // High-volume, liquid stocks that are good for selling puts
+    const recommendedStocks = [
+      { symbol: 'AAPL', name: 'Apple Inc.' },
+      { symbol: 'MSFT', name: 'Microsoft Corp.' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+      { symbol: 'TSLA', name: 'Tesla Inc.' },
+      { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+      { symbol: 'NVDA', name: 'NVIDIA Corp.' },
+      { symbol: 'META', name: 'Meta Platforms Inc.' },
+      { symbol: 'AMD', name: 'Advanced Micro Devices' },
+      { symbol: 'NFLX', name: 'Netflix Inc.' },
+      { symbol: 'DIS', name: 'Walt Disney Co.' },
+    ];
+
+    const allRecommendations = [];
+
+    for (const stock of recommendedStocks) {
+      try {
+        const optionsData = await this.getOptionsChain(stock.symbol);
+        const stockPrice = optionsData.stockPrice;
+        const puts = optionsData.puts;
+
+        if (!puts || puts.length === 0) continue;
+
+        // Find the best put option for this stock
+        const bestPut = this.analyzeBestSellPut(puts, stockPrice, stock);
+        if (bestPut) {
+          allRecommendations.push(bestPut);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch options for ${stock.symbol}:`, error.message);
+        continue;
+      }
+    }
+
+    // Sort by score (combination of return and safety)
+    allRecommendations.sort((a, b) => b.score - a.score);
+
+    return {
+      timestamp: new Date().toISOString(),
+      count: allRecommendations.length,
+      recommendations: allRecommendations,
+    };
+  }
+
+  /**
+   * Analyze and find the best sell put option for a stock
+   * @param {Array} puts - Put options array
+   * @param {number} stockPrice - Current stock price
+   * @param {Object} stock - Stock info
+   * @returns {Object} Best sell put option
+   */
+  analyzeBestSellPut(puts, stockPrice, stock) {
+    // Filter puts that are slightly out-of-the-money (safer for selling)
+    const viablePuts = puts.filter(put => {
+      const distanceFromStrike = ((stockPrice - put.strike) / stockPrice) * 100;
+      return distanceFromStrike > 2 && distanceFromStrike < 15 && put.volume > 0;
+    });
+
+    if (viablePuts.length === 0) return null;
+
+    // Find the put with best risk/reward balance
+    let bestPut = null;
+    let bestScore = 0;
+
+    for (const put of viablePuts) {
+      const strikePrice = put.strike;
+      const optionPrice = put.lastPrice || put.bid;
+      const premium = optionPrice * 100;
+      const delta = Math.abs(put.delta || -0.3);
+      const iv = put.impliedVolatility || 0.3;
+
+      const distanceFromStrike = ((stockPrice - strikePrice) / stockPrice) * 100;
+      const capitalRequired = strikePrice * 100;
+      const returnOnCapital = (premium / capitalRequired) * 100;
+
+      // Calculate score based on multiple factors
+      const score = (returnOnCapital * 10) + (put.volume / 100) + (distanceFromStrike * 2);
+
+      if (score > bestScore) {
+        bestScore = score;
+
+        let strategy = '';
+        let riskLevel = '';
+        let recommendation = '';
+
+        if (distanceFromStrike > 10) {
+          strategy = 'Conservative: Low risk, collect premium safely';
+          riskLevel = 'Low';
+          recommendation = 'Highly Recommended - Safe income strategy';
+        } else if (distanceFromStrike > 5) {
+          strategy = 'Moderate: Balanced risk/reward';
+          riskLevel = 'Medium';
+          recommendation = 'Recommended - Good premium opportunity';
+        } else {
+          strategy = 'Aggressive: Higher risk, maximum premium';
+          riskLevel = 'High';
+          recommendation = 'Consider Carefully - High risk/reward';
+        }
+
+        const probProfit = Math.min(95, 50 + distanceFromStrike * 2);
+
+        bestPut = {
+          symbol: stock.symbol,
+          companyName: stock.name,
+          stockPrice: stockPrice,
+          strikePrice: strikePrice,
+          optionPrice: optionPrice,
+          premium: premium,
+          volume: put.volume,
+          openInterest: put.openInterest || 0,
+          impliedVolatility: (iv * 100).toFixed(2),
+          delta: delta.toFixed(2),
+          daysToExpiration: this.calculateDaysToExpiration(put.expiration),
+          returnOnCapital: returnOnCapital.toFixed(2),
+          probProfit: probProfit.toFixed(1),
+          strategy: strategy,
+          riskLevel: riskLevel,
+          recommendation: recommendation,
+          score: score,
+          distanceFromStrike: distanceFromStrike.toFixed(2),
+        };
+      }
+    }
+
+    return bestPut;
+  }
+
+  /**
+   * Get top sell put options for a specific symbol
    * Sell put strategy: profit if stock stays above strike price
    * @param {string} symbol - Stock symbol
    * @returns {Promise} Top sell put options with execution strategy
