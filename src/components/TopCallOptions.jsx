@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import AlphaVantageService from '../services/alphaVantageService';
+import OptionsService from '../services/optionsService';
 
-function TopCallOptions({ apiKey }) {
+function TopCallOptions() {
   const [symbol, setSymbol] = useState('');
-  const [callOptions, setCallOptions] = useState(null);
+  const [putOptions, setPutOptions] = useState(null);
+  const [stockPrice, setStockPrice] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -13,16 +14,18 @@ function TopCallOptions({ apiKey }) {
 
     setIsLoading(true);
     setError(null);
-    setCallOptions(null);
+    setPutOptions(null);
+    setStockPrice(null);
 
     try {
-      const service = new AlphaVantageService(apiKey);
-      const options = await service.getTopOptions(symbol.toUpperCase());
+      const service = new OptionsService();
+      const data = await service.getTopSellPutOptions(symbol.toUpperCase());
 
-      if (options && options.calls) {
-        setCallOptions(options.calls);
+      if (data && data.options && data.options.length > 0) {
+        setPutOptions(data.options);
+        setStockPrice(data.stockPrice);
       } else {
-        setError('No call options data available for this symbol');
+        setError('No put options data available for this symbol');
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch options data');
@@ -32,11 +35,25 @@ function TopCallOptions({ apiKey }) {
     }
   };
 
+  const getRiskBadgeClass = (riskLevel) => {
+    switch (riskLevel) {
+      case 'Low':
+        return 'risk-badge risk-low';
+      case 'Medium':
+        return 'risk-badge risk-medium';
+      case 'High':
+        return 'risk-badge risk-high';
+      default:
+        return 'risk-badge';
+    }
+  };
+
   return (
     <div className="top-call-options">
-      <h2>Top Call Options</h2>
+      <h2>Top Sell Put Options</h2>
       <p className="section-description">
-        View the most active call options for any stock symbol
+        Real-time top sell put options for the week with execution strategies.
+        Sell put strategy profits when stock stays above strike price.
       </p>
 
       <form onSubmit={handleSubmit} className="options-search-form">
@@ -53,7 +70,7 @@ function TopCallOptions({ apiKey }) {
           className="options-search-button"
           disabled={isLoading || !symbol.trim()}
         >
-          {isLoading ? 'Loading...' : 'Get Call Options'}
+          {isLoading ? 'Loading...' : 'Get Top Sell Puts'}
         </button>
       </form>
 
@@ -63,37 +80,70 @@ function TopCallOptions({ apiKey }) {
         </div>
       )}
 
-      {callOptions && (
+      {putOptions && (
         <div className="call-options-table-container">
-          <h3>Call Options for {symbol}</h3>
-          <table className="options-table">
-            <thead>
-              <tr>
-                <th>Strike Price</th>
-                <th>Premium</th>
-                <th>Volume</th>
-                <th>Open Interest</th>
-                <th>Implied Volatility</th>
-              </tr>
-            </thead>
-            <tbody>
-              {callOptions.map((option, index) => (
-                <tr key={index}>
-                  <td>${option.strikePrice.toFixed(2)}</td>
-                  <td>${option.premium.toFixed(2)}</td>
-                  <td>{option.volume.toLocaleString()}</td>
-                  <td>{option.openInterest.toLocaleString()}</td>
-                  <td>{option.impliedVolatility}%</td>
+          <div className="options-header-info">
+            <h3>Top Sell Put Options for {symbol}</h3>
+            <div className="stock-price-badge">
+              Current Stock Price: <strong>${stockPrice?.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="options-table sell-puts-table">
+              <thead>
+                <tr>
+                  <th>Strike Price</th>
+                  <th>Stock Price</th>
+                  <th>Option Price</th>
+                  <th>Premium</th>
+                  <th>Volume</th>
+                  <th>Open Interest</th>
+                  <th>IV</th>
+                  <th>Delta</th>
+                  <th>Return %</th>
+                  <th>Days to Exp</th>
+                  <th>Prob of Profit</th>
+                  <th>Risk</th>
+                  <th>Execution Strategy</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {putOptions.map((option, index) => (
+                  <tr key={index} className="option-row">
+                    <td className="strike-cell">${option.strikePrice.toFixed(2)}</td>
+                    <td className="stock-price-cell">${option.stockPrice.toFixed(2)}</td>
+                    <td className="price-cell">${option.optionPrice.toFixed(2)}</td>
+                    <td className="premium-cell">${option.premium.toFixed(2)}</td>
+                    <td className="volume-cell">{option.volume.toLocaleString()}</td>
+                    <td className="oi-cell">{option.openInterest.toLocaleString()}</td>
+                    <td>{option.impliedVolatility}%</td>
+                    <td>{option.delta}</td>
+                    <td className="return-cell">{option.returnOnCapital}%</td>
+                    <td>{option.daysToExpiration}</td>
+                    <td className="prob-cell">{option.probProfit}%</td>
+                    <td>
+                      <span className={getRiskBadgeClass(option.riskLevel)}>
+                        {option.riskLevel}
+                      </span>
+                    </td>
+                    <td className="strategy-cell">{option.strategy}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="options-footer-note">
+            <p><strong>Note:</strong> Data is real-time from Yahoo Finance. Premium = Option Price × 100 shares.
+            Return % = (Premium / Capital Required) × 100. Higher return and volume indicate better opportunities.</p>
+          </div>
         </div>
       )}
 
-      {!callOptions && !error && !isLoading && (
+      {!putOptions && !error && !isLoading && (
         <div className="empty-state">
-          <p>Enter a stock symbol above to view top call options</p>
+          <p>Enter a stock symbol above to view top sell put options</p>
           <p className="empty-state-examples">Popular symbols: AAPL, GOOGL, MSFT, TSLA, AMZN</p>
         </div>
       )}

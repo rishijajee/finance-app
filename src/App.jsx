@@ -131,7 +131,7 @@ function App() {
               )}
 
               {currentView === 'topCallOptions' && (
-                <TopCallOptions apiKey={apiKey} />
+                <TopCallOptions />
               )}
             </div>
           </>

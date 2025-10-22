@@ -547,6 +547,7 @@
   color: #718096;
   margin: 0 0 2rem;
   font-size: 1rem;
+  line-height: 1.6;
 }
 
 .options-search-form {
@@ -595,10 +596,114 @@
   margin-top: 2rem;
 }
 
-.call-options-table-container h3 {
+.options-header-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.options-header-info h3 {
   color: #2d3748;
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 1.5rem;
+}
+
+.stock-price-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.stock-price-badge strong {
+  font-size: 1.2rem;
+}
+
+/* Sell Puts Table Specific Styling */
+.sell-puts-table {
+  font-size: 0.85rem;
+}
+
+.sell-puts-table th {
+  background: #f7fafc;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  color: #4a5568;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.sell-puts-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stock-price-cell {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.return-cell {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.prob-cell {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.strategy-cell {
+  max-width: 250px;
+  font-size: 0.8rem;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+/* Risk Badge Styling */
+.risk-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.risk-low {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.risk-medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.risk-high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Options Footer Note */
+.options-footer-note {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-left: 4px solid #667eea;
+  border-radius: 4px;
+}
+
+.options-footer-note p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 /* Footer */
