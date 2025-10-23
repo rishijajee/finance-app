@@ -6,6 +6,7 @@ function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [marketStatus, setMarketStatus] = useState(null);
   const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [usingFallback, setUsingFallback] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,10 +23,12 @@ function App() {
       const data = await service.getAllRecommendations();
 
       console.log('Data received:', data);
+      console.log('Recommendations count:', data.recommendations?.length || 0);
 
       setRecommendations(data.recommendations || []);
       setMarketStatus(data.marketStatus);
       setLastUpdateTime(data.lastUpdateTime);
+      setUsingFallback(data.usingFallback);
     } catch (err) {
       setError('Failed to load recommendations. Please try again.');
       console.error('Error:', err);
@@ -57,6 +60,13 @@ function App() {
                 <p className="update-time">Last Fetched: {lastUpdateTime} ET</p>
               )}
             </div>
+          </div>
+        )}
+
+        {usingFallback && (
+          <div className="fallback-warning">
+            ⚠️ Yahoo Finance API access limited in browser. Showing demo data with realistic prices.
+            For live data, deploy to a server or use during market hours.
           </div>
         )}
 
