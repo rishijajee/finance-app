@@ -1,99 +1,139 @@
-import { useState } from 'react';
-import StockLookup from './components/StockLookup';
-import StockPrice from './components/StockPrice';
-import OptionsTable from './components/OptionsTable';
-import NavigationMenu from './components/NavigationMenu';
-import TopCallOptions from './components/TopCallOptions';
-import YahooFinanceService from './services/yahooFinanceService';
+import { useState, useEffect } from 'react';
 import './App.css';
+import OptionsRecommendationService from './services/optionsRecommendationService';
 
 function App() {
-  const [stockData, setStockData] = useState(null);
-  const [optionsData, setOptionsData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentView, setCurrentView] = useState('home');
 
-  const handleSearch = async (symbol) => {
+  useEffect(() => {
+    loadRecommendations();
+  }, []);
+
+  const loadRecommendations = async () => {
     setIsLoading(true);
     setError(null);
-    setStockData(null);
-    setOptionsData(null);
-
-    const service = new YahooFinanceService();
 
     try {
-      // Fetch stock quote
-      const quote = await service.getStockQuote(symbol);
-      setStockData(quote);
-
-      // Fetch options data
-      const options = await service.getTopOptions(symbol);
-      setOptionsData(options);
+      const service = new OptionsRecommendationService();
+      const data = await service.getAllRecommendations();
+      setRecommendations(data);
     } catch (err) {
-      setError(err.message || 'Failed to fetch stock data');
-      console.error('Error fetching data:', err);
+      setError('Failed to load recommendations. Please try again.');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNavigate = (view) => {
-    setCurrentView(view);
-    // Reset data when navigating
-    setStockData(null);
-    setOptionsData(null);
-    setError(null);
+  const groupByStrategy = () => {
+    const groups = {
+      'Buy Call': [],
+      'Buy Put': [],
+      'Sell Put': [],
+      'Sell Call': [],
+      'Bull Call Spread': []
+    };
+
+    recommendations.forEach(rec => {
+      if (groups[rec.optionStrategy]) {
+        groups[rec.optionStrategy].push(rec);
+      }
+    });
+
+    return groups;
   };
+
+  const strategyGroups = groupByStrategy();
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>📈 Real-Time Stock & Options Tracker</h1>
-        <p className="app-subtitle">Get instant stock quotes and options data powered by Yahoo Finance</p>
+        <h1>Options Trading Recommendations</h1>
+        <p className="subtitle">Real-time analysis of top options opportunities</p>
+        <button onClick={loadRecommendations} disabled={isLoading} className="refresh-btn">
+          {isLoading ? 'Loading...' : '🔄 Refresh Data'}
+        </button>
       </header>
 
       <main className="app-main">
-        <NavigationMenu onNavigate={handleNavigate} currentView={currentView} />
+        {isLoading && (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Fetching real-time stock and options data from Yahoo Finance...</p>
+          </div>
+        )}
 
-        <div className="content-section">
-          {currentView === 'home' && (
-            <>
-              <div className="search-section">
-                <StockLookup onSearch={handleSearch} isLoading={isLoading} />
+        {error && (
+          <div className="error-container">
+            <p>{error}</p>
+            <button onClick={loadRecommendations}>Try Again</button>
+          </div>
+        )}
 
-              </div>
+        {!isLoading && !error && (
+          <div className="recommendations-wrapper">
+            {Object.entries(strategyGroups).map(([strategy, recs]) => (
+              <section key={strategy} className="strategy-section">
+                <h2 className="strategy-title">{strategy}</h2>
+                <p className="strategy-count">Top {recs.length} Recommendations</p>
 
-              {error && (
-                <div className="error-message">
-                  <strong>Error:</strong> {error}
-                </div>
-              )}
+                {recs.length > 0 ? (
+                  <div className="table-container">
+                    <table className="recommendations-table">
+                      <thead>
+                        <tr>
+                          <th>Stock Symbol</th>
+                          <th>Current Stock Price</th>
+                          <th>Option Strategy</th>
+                          <th>Strike Price</th>
+                          <th>Expiration Date</th>
+                          <th>Reason for Recommendation</th>
+                          <th>How to Trade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recs.map((rec, index) => (
+                          <tr key={`${rec.stockSymbol}-${index}`}>
+                            <td className="symbol-col">
+                              <strong>{rec.stockSymbol}</strong>
+                            </td>
+                            <td className="price-col">${rec.currentStockPrice}</td>
+                            <td className="strategy-col">
+                              <span className={`strategy-badge ${rec.optionStrategy.toLowerCase().replace(' ', '-')}`}>
+                                {rec.optionStrategy}
+                              </span>
+                            </td>
+                            <td className="strike-col">${rec.strikePrice}</td>
+                            <td className="exp-col">{rec.expirationDate}</td>
+                            <td className="reason-col">{rec.reason}</td>
+                            <td className="trade-col">{rec.howToTrade}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="no-data">
+                    <p>No recommendations available for this strategy</p>
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
+        )}
 
-              {stockData && (
-                <div className="results-section">
-                  <StockPrice stockData={stockData} />
-                  <OptionsTable optionsData={optionsData} />
-                </div>
-              )}
-
-              {!stockData && !error && !isLoading && (
-                <div className="empty-state">
-                  <p>Enter a stock symbol above to get started</p>
-                  <p className="empty-state-examples">Try: AAPL, GOOGL, MSFT, TSLA, AMZN</p>
-                </div>
-              )}
-            </>
-          )}
-
-          {currentView === 'topCallOptions' && (
-            <TopCallOptions />
-          )}
-        </div>
+        {!isLoading && !error && recommendations.length === 0 && (
+          <div className="no-data">
+            <p>No recommendations available at this time</p>
+            <button onClick={loadRecommendations}>Refresh</button>
+          </div>
+        )}
       </main>
 
       <footer className="app-footer">
-        <p>Powered by Yahoo Finance API | Real-time data refreshes on each search</p>
+        <p>All data is fetched in real-time from Yahoo Finance API</p>
       </footer>
     </div>
   );
