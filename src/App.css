@@ -203,23 +203,17 @@ body {
 }
 
 /* ========================================
-   RECOMMENDATIONS WRAPPER
+   SINGLE TABLE WRAPPER
    ======================================== */
 
-.recommendations-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.strategy-section {
+.single-table-wrapper {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.strategy-title {
+.table-title {
   font-size: 1.75rem;
   color: #1f2937;
   margin-bottom: 0.25rem;
@@ -227,7 +221,7 @@ body {
   padding-bottom: 0.5rem;
 }
 
-.strategy-count {
+.table-subtitle {
   font-size: 0.95rem;
   color: #6b7280;
   margin-bottom: 1rem;

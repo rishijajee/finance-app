@@ -20,42 +20,25 @@ function App() {
     try {
       const service = new OptionsRecommendationService();
       const data = await service.getAllRecommendations();
-      setRecommendations(data.recommendations);
+
+      console.log('Data received:', data);
+
+      setRecommendations(data.recommendations || []);
       setMarketStatus(data.marketStatus);
       setLastUpdateTime(data.lastUpdateTime);
     } catch (err) {
       setError('Failed to load recommendations. Please try again.');
-      console.error(err);
+      console.error('Error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const groupByStrategy = () => {
-    const groups = {
-      'Buy Call': [],
-      'Buy Put': [],
-      'Sell Put': [],
-      'Sell Call': [],
-      'Bull Call Spread': []
-    };
-
-    recommendations.forEach(rec => {
-      if (groups[rec.optionStrategy]) {
-        groups[rec.optionStrategy].push(rec);
-      }
-    });
-
-    return groups;
-  };
-
-  const strategyGroups = groupByStrategy();
-
   return (
     <div className="app">
       <header className="app-header">
         <h1>Options Trading Recommendations</h1>
-        <p className="subtitle">Real-time analysis of top options opportunities</p>
+        <p className="subtitle">Top 25 Options Opportunities</p>
 
         {marketStatus && (
           <div className={`market-status-banner ${marketStatus.isOpen ? 'market-open' : 'market-closed'}`}>
@@ -81,7 +64,7 @@ function App() {
         {isLoading && (
           <div className="loading-container">
             <div className="spinner"></div>
-            <p>Fetching real-time stock and options data from Yahoo Finance...</p>
+            <p>Fetching real-time stock and options data...</p>
           </div>
         )}
 
@@ -92,68 +75,58 @@ function App() {
           </div>
         )}
 
-        {!isLoading && !error && (
-          <div className="recommendations-wrapper">
-            {Object.entries(strategyGroups).map(([strategy, recs]) => (
-              <section key={strategy} className="strategy-section">
-                <h2 className="strategy-title">{strategy}</h2>
-                <p className="strategy-count">Top {recs.length} Recommendations</p>
+        {!isLoading && !error && recommendations.length > 0 && (
+          <div className="single-table-wrapper">
+            <h2 className="table-title">All Recommendations (25 Total)</h2>
+            <p className="table-subtitle">Top 5 for each of 5 strategies</p>
 
-                {recs.length > 0 ? (
-                  <div className="table-container">
-                    <table className="recommendations-table">
-                      <thead>
-                        <tr>
-                          <th>Stock Symbol</th>
-                          <th>Current Stock Price</th>
-                          <th>Option Strategy</th>
-                          <th>Strike Price</th>
-                          <th>Expiration Date</th>
-                          <th>Reason for Recommendation</th>
-                          <th>How to Trade</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recs.map((rec, index) => (
-                          <tr key={`${rec.stockSymbol}-${index}`}>
-                            <td className="symbol-col">
-                              <strong>{rec.stockSymbol}</strong>
-                            </td>
-                            <td className="price-col">${rec.currentStockPrice}</td>
-                            <td className="strategy-col">
-                              <span className={`strategy-badge ${rec.optionStrategy.toLowerCase().replace(' ', '-')}`}>
-                                {rec.optionStrategy}
-                              </span>
-                            </td>
-                            <td className="strike-col">${rec.strikePrice}</td>
-                            <td className="exp-col">{rec.expirationDate}</td>
-                            <td className="reason-col">{rec.reason}</td>
-                            <td className="trade-col">{rec.howToTrade}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="no-data">
-                    <p>No recommendations available for this strategy</p>
-                  </div>
-                )}
-              </section>
-            ))}
+            <div className="table-container">
+              <table className="recommendations-table">
+                <thead>
+                  <tr>
+                    <th>Stock Symbol</th>
+                    <th>Current Price</th>
+                    <th>Strategy</th>
+                    <th>Strike Price</th>
+                    <th>Expiration</th>
+                    <th>Reason</th>
+                    <th>How to Trade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recommendations.map((rec, index) => (
+                    <tr key={index}>
+                      <td className="symbol-col">
+                        <strong>{rec.stockSymbol}</strong>
+                      </td>
+                      <td className="price-col">${rec.currentStockPrice}</td>
+                      <td className="strategy-col">
+                        <span className={`strategy-badge ${rec.optionStrategy.toLowerCase().replace(' ', '-')}`}>
+                          {rec.optionStrategy}
+                        </span>
+                      </td>
+                      <td className="strike-col">${rec.strikePrice}</td>
+                      <td className="exp-col">{rec.expirationDate}</td>
+                      <td className="reason-col">{rec.reason}</td>
+                      <td className="trade-col">{rec.howToTrade}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {!isLoading && !error && recommendations.length === 0 && (
           <div className="no-data">
             <p>No recommendations available at this time</p>
-            <button onClick={loadRecommendations}>Refresh</button>
+            <button onClick={loadRecommendations} className="refresh-btn">Refresh</button>
           </div>
         )}
       </main>
 
       <footer className="app-footer">
-        <p>All data is fetched in real-time from Yahoo Finance API</p>
+        <p>Real-time data from Yahoo Finance API</p>
       </footer>
     </div>
   );
