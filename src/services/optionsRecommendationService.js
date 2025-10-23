@@ -19,6 +19,56 @@ class OptionsRecommendationService {
       'WMT', 'HD', 'DIS', 'MCD', 'COST',
       'XOM', 'CVX', 'BA', 'CAT'
     ];
+
+    this.marketStatus = null;
+    this.lastUpdateTime = null;
+  }
+
+  /**
+   * Check if market is currently open
+   * US Stock Market: 9:30 AM - 4:00 PM ET, Monday-Friday
+   */
+  getMarketStatus() {
+    const now = new Date();
+    const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+
+    const day = et.getDay(); // 0 = Sunday, 6 = Saturday
+    const hours = et.getHours();
+    const minutes = et.getMinutes();
+    const timeInMinutes = hours * 60 + minutes;
+
+    // Market closed on weekends
+    if (day === 0 || day === 6) {
+      return {
+        isOpen: false,
+        message: 'Market Closed (Weekend)',
+        note: 'Showing latest available prices from last trading session'
+      };
+    }
+
+    // Market hours: 9:30 AM (570 minutes) to 4:00 PM (960 minutes) ET
+    const marketOpen = 9 * 60 + 30;  // 9:30 AM
+    const marketClose = 16 * 60;      // 4:00 PM
+
+    if (timeInMinutes >= marketOpen && timeInMinutes < marketClose) {
+      return {
+        isOpen: true,
+        message: 'Market Open',
+        note: 'Displaying real-time prices'
+      };
+    } else if (timeInMinutes < marketOpen) {
+      return {
+        isOpen: false,
+        message: 'Market Closed (Pre-Market)',
+        note: 'Showing latest closing prices from previous trading session'
+      };
+    } else {
+      return {
+        isOpen: false,
+        message: 'Market Closed (After-Hours)',
+        note: 'Showing latest closing prices from today\'s trading session'
+      };
+    }
   }
 
   /**
@@ -26,6 +76,21 @@ class OptionsRecommendationService {
    */
   async getAllRecommendations() {
     console.log('Fetching recommendations...');
+
+    // Check market status
+    this.marketStatus = this.getMarketStatus();
+    this.lastUpdateTime = new Date().toLocaleString('en-US', {
+      timeZone: 'America/New_York',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    console.log(`Market Status: ${this.marketStatus.message}`);
+    console.log(`Last Update: ${this.lastUpdateTime} ET`);
 
     const allRecs = [];
 
@@ -50,7 +115,12 @@ class OptionsRecommendationService {
     // Get top 5 for each strategy
     const final = this.selectTop5PerStrategy(allRecs);
     console.log(`Generated ${final.length} recommendations`);
-    return final;
+
+    return {
+      recommendations: final,
+      marketStatus: this.marketStatus,
+      lastUpdateTime: this.lastUpdateTime
+    };
   }
 
   /**

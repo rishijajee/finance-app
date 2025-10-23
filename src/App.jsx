@@ -4,6 +4,8 @@ import OptionsRecommendationService from './services/optionsRecommendationServic
 
 function App() {
   const [recommendations, setRecommendations] = useState([]);
+  const [marketStatus, setMarketStatus] = useState(null);
+  const [lastUpdateTime, setLastUpdateTime] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,7 +20,9 @@ function App() {
     try {
       const service = new OptionsRecommendationService();
       const data = await service.getAllRecommendations();
-      setRecommendations(data);
+      setRecommendations(data.recommendations);
+      setMarketStatus(data.marketStatus);
+      setLastUpdateTime(data.lastUpdateTime);
     } catch (err) {
       setError('Failed to load recommendations. Please try again.');
       console.error(err);
@@ -52,6 +56,22 @@ function App() {
       <header className="app-header">
         <h1>Options Trading Recommendations</h1>
         <p className="subtitle">Real-time analysis of top options opportunities</p>
+
+        {marketStatus && (
+          <div className={`market-status-banner ${marketStatus.isOpen ? 'market-open' : 'market-closed'}`}>
+            <div className="status-indicator">
+              <span className={`status-dot ${marketStatus.isOpen ? 'dot-green' : 'dot-red'}`}></span>
+              <strong>{marketStatus.message}</strong>
+            </div>
+            <div className="status-details">
+              <p>{marketStatus.note}</p>
+              {lastUpdateTime && (
+                <p className="update-time">Last Updated: {lastUpdateTime} ET</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <button onClick={loadRecommendations} disabled={isLoading} className="refresh-btn">
           {isLoading ? 'Loading...' : '🔄 Refresh Data'}
         </button>

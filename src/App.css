@@ -70,6 +70,77 @@ body {
   cursor: not-allowed;
 }
 
+/* Market Status Banner */
+.market-status-banner {
+  margin: 1.5rem auto 0;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  max-width: 600px;
+  border: 2px solid;
+}
+
+.market-open {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+}
+
+.market-closed {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.dot-green {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.dot-red {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.status-indicator strong {
+  font-size: 1.1rem;
+}
+
+.status-details {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.status-details p {
+  margin: 0.25rem 0;
+}
+
+.update-time {
+  font-style: italic;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
 /* ========================================
    MAIN CONTENT
    ======================================== */
