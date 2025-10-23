@@ -27,6 +27,7 @@ class OptionsRecommendationService {
   /**
    * Check if market is currently open
    * US Stock Market: 9:30 AM - 4:00 PM ET, Monday-Friday
+   * After hours: Shows data from 3:55 PM - 4:00 PM ET (final trading period)
    */
   getMarketStatus() {
     const now = new Date();
@@ -42,7 +43,8 @@ class OptionsRecommendationService {
       return {
         isOpen: false,
         message: 'Market Closed (Weekend)',
-        note: 'Showing latest available prices from last trading session'
+        note: 'Showing closing prices from Friday 3:55-4:00 PM ET (final trading period)',
+        dataTime: 'Friday 3:55-4:00 PM ET'
       };
     }
 
@@ -54,19 +56,23 @@ class OptionsRecommendationService {
       return {
         isOpen: true,
         message: 'Market Open',
-        note: 'Displaying real-time prices'
+        note: 'Displaying real-time live prices',
+        dataTime: 'Live'
       };
     } else if (timeInMinutes < marketOpen) {
       return {
         isOpen: false,
         message: 'Market Closed (Pre-Market)',
-        note: 'Showing latest closing prices from previous trading session'
+        note: 'Showing closing prices from previous day 3:55-4:00 PM ET (final trading period)',
+        dataTime: 'Previous Day 3:55-4:00 PM ET'
       };
     } else {
+      // After 4:00 PM - showing closing prices from 3:55-4:00 PM ET
       return {
         isOpen: false,
         message: 'Market Closed (After-Hours)',
-        note: 'Showing latest closing prices from today\'s trading session'
+        note: 'Showing closing prices from today 3:55-4:00 PM ET (final trading period)',
+        dataTime: 'Today 3:55-4:00 PM ET'
       };
     }
   }

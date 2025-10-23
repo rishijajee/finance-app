@@ -48,8 +48,13 @@ function App() {
             </div>
             <div className="status-details">
               <p>{marketStatus.note}</p>
+              {marketStatus.dataTime && (
+                <p className="data-time-info">
+                  <strong>Data Period:</strong> {marketStatus.dataTime}
+                </p>
+              )}
               {lastUpdateTime && (
-                <p className="update-time">Last Updated: {lastUpdateTime} ET</p>
+                <p className="update-time">Last Fetched: {lastUpdateTime} ET</p>
               )}
             </div>
           </div>

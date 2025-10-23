@@ -135,6 +135,18 @@ body {
   margin: 0.25rem 0;
 }
 
+.data-time-info {
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+
+.data-time-info strong {
+  color: inherit;
+}
+
 .update-time {
   font-style: italic;
   font-size: 0.85rem;
