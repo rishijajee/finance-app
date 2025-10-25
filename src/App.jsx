@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './App.css';
 import OptionsRecommendationService from './services/optionsRecommendationService';
 
@@ -70,9 +71,14 @@ function App() {
           </div>
         )}
 
-        <button onClick={loadRecommendations} disabled={isLoading} className="refresh-btn">
-          {isLoading ? 'Loading...' : '🔄 Refresh Data'}
-        </button>
+        <div className="header-actions">
+          <button onClick={loadRecommendations} disabled={isLoading} className="refresh-btn">
+            {isLoading ? 'Loading...' : '🔄 Refresh Data'}
+          </button>
+          <Link to="/testing-tools" className="llm-directory-link">
+            LLM-Directory →
+          </Link>
+        </div>
       </header>
 
       <main className="app-main">

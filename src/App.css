@@ -430,6 +430,234 @@ body {
   }
 }
 
+/* ========================================
+   HEADER ACTIONS (Refresh & LLM-Directory Link)
+   ======================================== */
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.llm-directory-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.llm-directory-link:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.back-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #6b7280;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.update-info {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.update-info p {
+  margin: 0.25rem 0;
+}
+
+/* ========================================
+   CATEGORY FILTER
+   ======================================== */
+
+.category-filter {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.category-filter label {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.category-select {
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 200px;
+  transition: all 0.3s;
+}
+
+.category-select:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.category-select option {
+  background: #374151;
+  color: white;
+  padding: 0.5rem;
+}
+
+/* ========================================
+   TESTING TOOLS TABLE SPECIFIC STYLES
+   ======================================== */
+
+.testing-tools-table .tool-name-col strong {
+  color: #1f2937;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.testing-tools-table .description-col {
+  color: #374151;
+  line-height: 1.6;
+  max-width: 350px;
+}
+
+.testing-tools-table .languages-col,
+.testing-tools-table .platforms-col {
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 200px;
+}
+
+.testing-tools-table .bestfor-col {
+  color: #374151;
+  line-height: 1.6;
+  max-width: 250px;
+}
+
+.testing-tools-table .features-col {
+  color: #4b5563;
+  line-height: 1.6;
+  max-width: 350px;
+  font-size: 0.95rem;
+}
+
+/* Category Badges */
+.category-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.web-testing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.mobile-testing {
+  background: #fce7f3;
+  color: #9f1239;
+}
+
+.unit-testing {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.api-testing {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.performance-testing {
+  background: #e9d5ff;
+  color: #6b21a8;
+}
+
+.desktop---web-testing {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.all-in-one-testing {
+  background: #fce7f3;
+  color: #831843;
+}
+
+.keyword-driven-testing {
+  background: #cffafe;
+  color: #155e75;
+}
+
+.bdd-testing {
+  background: #fed7aa;
+  color: #7c2d12;
+}
+
+.ci-cd---test-orchestration {
+  background: #d9f99d;
+  color: #365314;
+}
+
+.test-management {
+  background: #fbcfe8;
+  color: #701a75;
+}
+
+.cloud-testing {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+
+/* Pricing Badges */
+.pricing-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pricing-free {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.pricing-paid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 @media (max-width: 768px) {
   .app-header {
     padding: 1.5rem;
@@ -468,5 +696,25 @@ body {
   .trade-col {
     max-width: 200px;
     font-size: 0.85rem;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .llm-directory-link,
+  .back-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .category-filter {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .category-select {
+    width: 100%;
   }
 }
